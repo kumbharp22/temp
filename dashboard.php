@@ -23,6 +23,19 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Include AWS SDK and initialize S3 client
+require 'vendor/autoload.php';
+
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+
+$s3Client = new S3Client([
+    'region'  => 'ap-south-1', // Your AWS region
+    'version' => 'latest'
+]);
+
+$bucketName = 'jayesh1610'; // Your S3 bucket name
+
 // Handle image deletion
 if (isset($_POST['delete_image'])) {
     $image_url = $_POST['image_url'];
@@ -33,8 +46,25 @@ if (isset($_POST['delete_image'])) {
     $stmt->execute();
     $stmt->close();
 
-    // Optionally, delete the image from S3
-    // (You'll need to use AWS SDK to do this, which is not included here)
+    // Extract the S3 object key from the image URL
+    $parsedUrl = parse_url($image_url);
+    $objectKey = ltrim($parsedUrl['path'], '/'); // Remove leading slash from path
+
+    // Delete the image from S3
+    try {
+        $result = $s3Client->deleteObject([
+            'Bucket' => $bucketName,
+            'Key'    => $objectKey,
+        ]);
+
+        if ($result['@metadata']['statusCode'] === 204) {
+            echo "Image deleted successfully from S3.";
+        } else {
+            echo "Unexpected status code from S3: " . $result['@metadata']['statusCode'];
+        }
+    } catch (AwsException $e) {
+        echo "Error deleting image from S3: " . $e->getMessage();
+    }
 }
 
 // Query to get user images
@@ -130,7 +160,6 @@ $conn->close();
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgb(0,0,0);
             background-color: rgba(0,0,0,0.9);
             padding-top: 60px;
         }
@@ -170,7 +199,7 @@ $conn->close();
         <?php if (count($images) > 0): ?>
             <?php foreach ($images as $image_url): ?>
                 <div>
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" alt="User Image" onclick="openModal('<?php echo htmlspecialchars($image_url); ?>')">
+                    <img src="<?php echo htmlspecialchars($image_url); ?>" alt="User Image">
                     <form method="post" action="dashboard.php">
                         <input type="hidden" name="image_url" value="<?php echo htmlspecialchars($image_url); ?>">
                         <button type="submit" name="delete_image" class="delete-button">Delete</button>
@@ -181,29 +210,5 @@ $conn->close();
             <p>No images uploaded yet.</p>
         <?php endif; ?>
     </div>
-
-    <!-- The Modal -->
-    <div id="myModal" class="modal">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="modalImage">
-    </div>
-
-    <script>
-        function openModal(imageUrl) {
-            document.getElementById("myModal").style.display = "block";
-            document.getElementById("modalImage").src = imageUrl;
-        }
-
-        function closeModal() {
-            document.getElementById("myModal").style.display = "none";
-        }
-
-        window.onclick = function(event) {
-            var modal = document.getElementById("myModal");
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-    </script>
 </body>
 </html>
