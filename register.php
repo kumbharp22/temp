@@ -1,6 +1,6 @@
 <?php
 // Database connection
-$host = 'database-1.clmk2e86erwk.ap-south-1.rds.amazonaws.com';
+$host = 'image-db.cp0wuao8ky1o.ap-south-1.rds.amazonaws.com';
 $dbname = 'user_db';
 $user = 'root';
 $password = 'pass1234';

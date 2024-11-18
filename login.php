@@ -2,7 +2,7 @@
 session_start();
 
 // Database configuration
-$host = 'database-1.clmk2e86erwk.ap-south-1.rds.amazonaws.com';
+$host = 'image-db.cp0wuao8ky1o.ap-south-1.rds.amazonaws.com';
 $db = 'user_db';
 $user = 'root';
 $pass = 'pass1234';
